@@ -1,3 +1,148 @@
+## 1）整体理解
+
+⭐️核心目标 &#x20;
+
+* 实现检索增强生成(RAG)的模块化解决方案 &#x20;
+
+* 提供3种检索策略：基础向量检索(SimpleRAG)、分块检索(ChunkedRAG)、混合检索(HybridRAG) &#x20;
+
+* 平衡检索质量与计算效率 &#x20;
+
+
+
+⭐️关键创新点 &#x20;
+
+1. **分块策略**：支持重叠分块与精确token计算 &#x20;
+
+2. **混合检索**：结合向量相似度(70%)与关键词匹配(30%) &#x20;
+
+3) **性能监控**：完整记录token用量、延迟等指标 &#x20;
+
+
+
+⭐️典型应用场景 &#x20;
+
+* 知识密集型QA系统 &#x20;
+
+* 长文档分析工具 &#x20;
+
+* 需要实时更新的知识库应用 &#x20;
+
+
+
+## 2）核心流程图
+
+![](assets/images-04/image.png)
+
+
+
+## **3）关键技术实现**
+
+### 3.1 分块处理
+
+```python
+def text_to_chunks(text, chunk_size=1000, chunk_overlap=200):
+    # 使用tiktoken精确计算token边界
+    tokens = encoding.encode(text)  # 精确token化
+    while i < len(tokens):
+        chunk_end = min(i + chunk_size, len(tokens))
+        chunk_tokens = tokens[i:chunk_end]  # 滑动窗口处理
+        i += max(1, chunk_size - chunk_overlap)  # 控制重叠区域
+```
+
+**挑战**：处理特殊字符时的token对齐问题 &#x20;
+
+**解决方案**：提供字符级近似分块作为fallback &#x20;
+
+### 3.2 混合检索算法
+
+```python
+# HybridRAG中的加权公式
+final_score = (embedding_weight * cosine_sim) + (keyword_weight * term_match_ratio)
+```
+
+**权衡因素**： &#x20;
+
+* 关键词权重过高 → 忽略语义相似性 &#x20;
+
+* 向量权重过高 → 对术语匹配不敏感 &#x20;
+
+### 3.3 FAISS集成
+
+```python
+index = faiss.IndexFlatL2(embedding_dim)  # L2距离索引
+index.add(np.array(embeddings))  # 批量加载向量
+distances, indices = index.search(query_embedding, top_k)  # 近似最近邻搜索
+```
+
+**性能对比**： &#x20;
+
+| 方法    | 10k文档延迟 | 精度   |
+| ----- | ------- | ---- |
+| 暴力搜索  | 1200ms  | 100% |
+| FAISS | 35ms    | 98%  |
+
+
+
+## 4）扩展问题
+
+| 序号 | 关键问题             | 解决方案                  |
+| -- | ---------------- | --------------------- |
+| 1  | 如何处理超长上下文窗口？     | 动态分块 + 层次化检索架构        |
+| 2  | 冷启动时的embedding缺失 | 使用零向量占位 + 异步生成        |
+| 3  | 混合检索的权重调优        | A/B测试 + 人工评估指标        |
+| 4  | 跨语言检索支持          | 多语言embedding模型 + 查询翻译 |
+
+
+
+## 5）最佳实践建议
+
+1. **分块策略**： &#x20;
+
+   * 技术文档：500-800 tokens + 20%重叠 &#x20;
+
+   * 对话记录：按说话人分块 &#x20;
+
+   * 代码文件：按函数/类分块 &#x20;
+
+
+
+2. **监控指标**： &#x20;
+
+   ```python
+   metrics = {
+       'retrieval_precision': calculate_precision(retrieved_docs),
+       'context_utilization': used_tokens / total_tokens,
+       'latency_breakdown': {
+           'retrieval': retrieval_time,
+           'generation': llm_time
+       }
+   }
+   ```
+
+
+
+3) **扩展方向**： &#x20;
+
+   * 支持增量索引更新 &#x20;
+
+   * 加入rerank模块提升精度 &#x20;
+
+   * 实现多模态检索能力 &#x20;
+
+
+
+该实现展示了生产级RAG系统的核心要素，特别适合需要平衡响应速度与答案准确性的场景。
+
+
+
+"""
+以下为源代码（注释已翻译为中文）
+"""
+
+
+
+
 ```javascript
 #!/usr/bin/env python
 # -*- 编码：utf-8 -*-
@@ -1306,141 +1451,4 @@ Query_embedding
 
 ***
 
-
-
-## 1）整体理解
-
-⭐️核心目标 &#x20;
-
-* 实现检索增强生成(RAG)的模块化解决方案 &#x20;
-
-* 提供3种检索策略：基础向量检索(SimpleRAG)、分块检索(ChunkedRAG)、混合检索(HybridRAG) &#x20;
-
-* 平衡检索质量与计算效率 &#x20;
-
-
-
-⭐️关键创新点 &#x20;
-
-1. **分块策略**：支持重叠分块与精确token计算 &#x20;
-
-2. **混合检索**：结合向量相似度(70%)与关键词匹配(30%) &#x20;
-
-3) **性能监控**：完整记录token用量、延迟等指标 &#x20;
-
-
-
-⭐️典型应用场景 &#x20;
-
-* 知识密集型QA系统 &#x20;
-
-* 长文档分析工具 &#x20;
-
-* 需要实时更新的知识库应用 &#x20;
-
-
-
-## 2）核心流程图
-
-![](assets/images-04/image.png)
-
-
-
-## **3）关键技术实现**
-
-### 3.1 分块处理
-
-```python
-def text_to_chunks(text, chunk_size=1000, chunk_overlap=200):
-    # 使用tiktoken精确计算token边界
-    tokens = encoding.encode(text)  # 精确token化
-    while i < len(tokens):
-        chunk_end = min(i + chunk_size, len(tokens))
-        chunk_tokens = tokens[i:chunk_end]  # 滑动窗口处理
-        i += max(1, chunk_size - chunk_overlap)  # 控制重叠区域
-```
-
-**挑战**：处理特殊字符时的token对齐问题 &#x20;
-
-**解决方案**：提供字符级近似分块作为fallback &#x20;
-
-### 3.2 混合检索算法
-
-```python
-# HybridRAG中的加权公式
-final_score = (embedding_weight * cosine_sim) + (keyword_weight * term_match_ratio)
-```
-
-**权衡因素**： &#x20;
-
-* 关键词权重过高 → 忽略语义相似性 &#x20;
-
-* 向量权重过高 → 对术语匹配不敏感 &#x20;
-
-### 3.3 FAISS集成
-
-```python
-index = faiss.IndexFlatL2(embedding_dim)  # L2距离索引
-index.add(np.array(embeddings))  # 批量加载向量
-distances, indices = index.search(query_embedding, top_k)  # 近似最近邻搜索
-```
-
-**性能对比**： &#x20;
-
-| 方法    | 10k文档延迟 | 精度   |
-| ----- | ------- | ---- |
-| 暴力搜索  | 1200ms  | 100% |
-| FAISS | 35ms    | 98%  |
-
-
-
-## 4）扩展问题
-
-| 序号 | 关键问题             | 解决方案                  |
-| -- | ---------------- | --------------------- |
-| 1  | 如何处理超长上下文窗口？     | 动态分块 + 层次化检索架构        |
-| 2  | 冷启动时的embedding缺失 | 使用零向量占位 + 异步生成        |
-| 3  | 混合检索的权重调优        | A/B测试 + 人工评估指标        |
-| 4  | 跨语言检索支持          | 多语言embedding模型 + 查询翻译 |
-
-
-
-## 5）最佳实践建议
-
-1. **分块策略**： &#x20;
-
-   * 技术文档：500-800 tokens + 20%重叠 &#x20;
-
-   * 对话记录：按说话人分块 &#x20;
-
-   * 代码文件：按函数/类分块 &#x20;
-
-
-
-2. **监控指标**： &#x20;
-
-   ```python
-   metrics = {
-       'retrieval_precision': calculate_precision(retrieved_docs),
-       'context_utilization': used_tokens / total_tokens,
-       'latency_breakdown': {
-           'retrieval': retrieval_time,
-           'generation': llm_time
-       }
-   }
-   ```
-
-
-
-3) **扩展方向**： &#x20;
-
-   * 支持增量索引更新 &#x20;
-
-   * 加入rerank模块提升精度 &#x20;
-
-   * 实现多模态检索能力 &#x20;
-
-
-
-该实现展示了生产级RAG系统的核心要素，特别适合需要平衡响应速度与答案准确性的场景。
 
