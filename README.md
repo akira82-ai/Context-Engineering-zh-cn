@@ -24,8 +24,8 @@ https://github.com/davidkimai/Context-Engineering
 这是一本受卡帕西和3Blue1Brown启发的实用、基于第一性原理的手册，旨在超越提示工程，迈向更广泛的上下文设计、编排和优化领域。
 
 ## 联系我
-
-<img src="images/image.png" width="30%">
+- WeChat: data_growth
+- x.com:  [data_growth](https://x.com/AgiRay1015)
 
 
 
