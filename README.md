@@ -25,7 +25,7 @@ https://github.com/davidkimai/Context-Engineering
 
 ## 联系我
 - WeChat: data_growth
-- x.com:  [data_growth](https://x.com/AgiRay1015)
+- x.com:  [AgiRay1015](https://x.com/AgiRay1015)
 
 
 
